@@ -1,8 +1,22 @@
 [please]
 version = 17.8.7
 
-[Plugin "js"]
-Target = //build_defs:js
+[parse]
+preloadsubincludes = ///go//build_defs:go
+
+; [Plugin "js"]
+; Target = //build_defs:js
+; ESBuild = //third_party/js:esbuild
 
 [PluginDefinition]
 name = "js"
+
+[PluginConfig "esbuild"]
+ConfigKey = ESBuild
+DefaultValue = //tools/esbuild
+Help = A file path or build label for esbuild.
+Inherit = true
+
+[Plugin "go"]
+Target = //plugins:go
+gotool = //third_party/go:gotool|go

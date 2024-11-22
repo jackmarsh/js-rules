@@ -1,0 +1,42 @@
+def node_module(name:str, scope:str = '', module:str = '', version:str = '', visibility:list=[], deps:list=[], hashes:list=None):
+    module_name = module or name
+    if scope:
+        url = f'https://registry.yarnpkg.com/{scope}/{module_name}/-/{module_name}-{version}.tgz'
+    else:
+        url = f'https://registry.yarnpkg.com/{module_name}/-/{module_name}-{version}.tgz'
+
+    download = remote_file(
+        name=f'_{name}#download',
+        url=url,
+        out=name,
+        hashes=hashes,
+        extract=True,
+    )
+
+    out_location = package_name() + f"/{name}.js"
+    return build_rule(
+        name = name,
+        outs = [name + ".js"],
+        srcs = [download],
+        exported_deps = deps,
+        tools = [CONFIG.JS.ESBUILD],
+        visibility = visibility,
+        labels = [
+            f'node_module:{module_name}:{out_location}',
+            f'module_version:{module_name}@{version}',
+        ],
+        pre_build = _compile_comand(),
+    )
+
+
+def _compile_comand(entry_point:str=None):
+    def pre_build(name):
+        entry_point_flag = f"--entry_point=$PKG_DIR/{entry_point}" if entry_point else "--package_json=$(find $PKG_DIR -name 'package.json' | head -n 1)"
+        externl_flags = _external_flags(name)
+        cmd = f"$TOOLS compile {entry_point_flag} {externl_flags} --out=$OUT"
+        set_command(name, cmd)
+    return pre_build
+
+def _external_flags(name):
+    modules = [module.split(":")[0] for module in get_labels(name, 'node_module:')]
+    return " ".join([f"--external={module}" for module in modules])
