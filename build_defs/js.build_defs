@@ -28,6 +28,35 @@ def node_module(name:str, scope:str = '', module:str = '', version:str = '', vis
         pre_build = _compile_comand(),
     )
 
+def js_library(name:str, module_name:str='', srcs:list=[], deps:list=[], visibility:list=[], entry_point:str="index.js"):
+    module_name = module_name or package_name() + f"/{name}"
+    out_location = package_name() + f"/{name}.js"
+
+    return build_rule(
+        name = name,
+        outs = [name + ".js"],
+        srcs = srcs,
+        exported_deps = deps,
+        tools = [CONFIG.JS.ESBUILD],
+        visibility = visibility,
+        labels = [
+            f'node_module:{module_name}:{out_location}',
+        ],
+        pre_build = _compile_comand(entry_point),
+    )
+
+def js_binary(name:str, entry_point:str="index.js", srcs:list=[], deps:list=[], visibility:list=[]):
+    return build_rule(
+        name = name,
+        outs = [name + ".js"],
+        srcs = srcs,
+        exported_deps = deps,
+        binary = True,
+        tools = [CONFIG.JS.ESBUILD],
+        visibility = visibility,
+        pre_build = _link_command(entry_point),
+    )
+
 
 def _compile_comand(entry_point:str=None):
     def pre_build(name):
@@ -37,6 +66,18 @@ def _compile_comand(entry_point:str=None):
         set_command(name, cmd)
     return pre_build
 
+def _link_command(entry_point:str):
+    def pre_build(name):
+        # TODO(jackmarsh): probably want to add the shebang conditionally but this is useful for now
+        module_flags = _module_map_flags(name)
+        cmd = f"$TOOLS link --entry_point $PKG_DIR/{entry_point} {module_flags} --out=$OUT.tmp && echo \"#!/usr/bin/env node\" > $OUT && cat $OUT.tmp >> $OUT"
+        set_command(name, cmd)
+    return pre_build
+
 def _external_flags(name):
     modules = [module.split(":")[0] for module in get_labels(name, 'node_module:')]
     return " ".join([f"--external={module}" for module in modules])
+
+def _module_map_flags(name):
+    modules = [module.split(":") for module in get_labels(name, 'node_module:')]
+    return " ".join([f"--module {module}:{path}" for module, path in modules])
