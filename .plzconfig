@@ -3,6 +3,7 @@ version = 17.8.7
 
 [parse]
 preloadsubincludes = ///go//build_defs:go
+preloadsubincludes = ///shell//build_defs:shell
 
 ; [Plugin "js"]
 ; Target = //build_defs:js
@@ -17,6 +18,15 @@ DefaultValue = //tools/esbuild
 Help = A file path or build label for esbuild.
 Inherit = true
 
+[PluginConfig "http_server"]
+ConfigKey = HTTP_SERVER
+DefaultValue = //tools/http_server
+Help = A file path or build label for a http_server.
+Inherit = true
+
 [Plugin "go"]
 Target = //plugins:go
 gotool = //third_party/go:gotool|go
+
+[Plugin "shell"]
+Target = //plugins:shell

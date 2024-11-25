@@ -9,7 +9,7 @@ go_toolchain(
 go_mod_download(
     name = "esbuild_download",
     module = "github.com/evanw/esbuild",
-    version = "v0.14.36",
+    version = "v0.24.0",
 )
 
 go_module(
@@ -18,7 +18,7 @@ go_module(
     download = ":esbuild_download",
     install = ["cmd/esbuild"],
     module = "github.com/evanw/esbuild",
-    deps = [":xsys"],
+    deps = [":x_sys"],
 )
 
 go_module(
@@ -26,11 +26,11 @@ go_module(
     download = ":esbuild_download",
     install = ["pkg/api", "internal/..."],
     module = "github.com/evanw/esbuild",
-    deps = [":xsys"],
+    deps = [":x_sys"],
 )
 
 go_module(
-    name = "xsys",
+    name = "x_sys",
     install = ["..."],
     module = "golang.org/x/sys",
     version = "765f4ea38db36397e827c4153018aa272eed7835",
@@ -40,5 +40,18 @@ go_module(
     name = "go-flags",
     module = "github.com/thought-machine/go-flags",
     version = "v1.5.0",
-    deps = [":xsys"],
+    deps = [":x_sys"],
+)
+
+go_module(
+    name = "x_sync",
+    install = ["..."],
+    module = "golang.org/x/sync",
+    version = "v0.6.0",
+)
+
+go_module(
+    name = "semver",
+    module = "github.com/Masterminds/semver/v3",
+    version = "v3.3.1",
 )
