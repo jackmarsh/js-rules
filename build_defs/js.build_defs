@@ -1,0 +1,158 @@
+def node_module(name:str, scope:str = '', module:str = '', version:str = '', visibility:list=[], deps:list=[], hashes:list=None, binary:bool=False, entry_point:str=''):
+    module_name = module or name
+    if scope:
+        url = f'https://registry.yarnpkg.com/{scope}/{module_name}/-/{module_name}-{version}.tgz'
+        module_label = f'{scope}/{module_name}'
+    else:
+        url = f'https://registry.yarnpkg.com/{module_name}/-/{module_name}-{version}.tgz'
+        module_label = f'{module_name}'
+
+    download = remote_file(
+        name=f'_{name}#download',
+        url=url,
+        out=f'{name}#dl',
+        hashes=hashes,
+        extract=True,
+    )
+    entry_point = f'{name}#dl/package/{entry_point}' if entry_point else ''
+    out_location = package_name() + f"/{name}/index.js"
+    return build_rule(
+        name = name,
+        outs = [name],
+        srcs = [download],
+        exported_deps = deps,
+        tools = [CONFIG.JS.ESBUILD],
+        visibility = visibility,
+        labels = [
+            f'node_module:{module_label}:{out_location}',
+            f'module_version:{module_label}@{version}',
+        ],
+        pre_build = _compile_comand(entry_point=entry_point, binary=binary),
+    )
+
+def js_library(name:str, module_name:str='', srcs:list=[], deps:list=[], visibility:list=[], entry_point:str="index.js"):
+    module_name = module_name or package_name() + f"/{name}"
+    out_dir = package_name() + f'/{name}'
+    return build_rule(
+        name = name,
+        outs = [name],
+        srcs = [entry_point] + srcs,
+        exported_deps = deps,
+        tools = [CONFIG.JS.ESBUILD],
+        visibility = visibility,
+        labels = [
+            f'node_module:{module_name}:{out_dir}/index.js',
+        ],
+        pre_build = _compile_comand(entry_point),
+    )
+
+def jsx_library(name:str, module_name:str='', srcs:list=[], deps:list=[], visibility:list=[], entry_point:str="index.jsx"):
+    """Syntactic sugar for a JSX js_library"""
+    return js_library(
+        name=name,
+        module_name=module_name,
+        srcs=srcs,
+        deps=deps,
+        visibility=visibility,
+        entry_point=entry_point,
+    )
+
+def css_module(name:str, module_name:str='', srcs:list=[], deps:list=[], visibility:list=[], entry_point:str="index.js"):
+    module_name = module_name or package_name() + f"/{name}"
+    out_dir = package_name() + f'/{name}'
+    return build_rule(
+        name = name,
+        outs = [name],
+        srcs = [entry_point] + srcs,
+        exported_deps = deps,
+        tools = [CONFIG.JS.ESBUILD],
+        visibility = visibility,
+        labels = [
+            f'css_module:{module_name}:{out_dir}/index.css',
+        ],
+        pre_build = _compile_comand(entry_point),
+    )
+
+def js_binary(name:str, entry_point:str="index.js", srcs:list=[], deps:list=[], visibility:list=[], out_dir:str='dist'):
+    return build_rule(
+        name = name,
+        outs = [out_dir],
+        srcs = srcs,
+        exported_deps = deps,
+        binary = True,
+        tools = [CONFIG.JS.ESBUILD],
+        visibility = visibility,
+        pre_build = _link_command(entry_point),
+    )
+
+def _compile_comand(entry_point:str=None, binary:bool=False):
+    def pre_build(name):
+        entry_point_flag = f"--entry_point=$PKG_DIR/{entry_point}" if entry_point else "--package_json=$(find $PKG_DIR -name 'package.json' | head -n 1)"
+        binary_flag = "--binary" if binary else ""
+        external_flags = _external_flags(name)
+        cmd = f"$TOOLS compile {entry_point_flag} {external_flags} {binary_flag} --out-dir=$OUTS"
+        set_command(name, cmd)
+    return pre_build
+
+def _link_command(entry_point:str):
+    def pre_build(name):
+        module_flags = _module_map_flags(name)
+        css_flags = _css_map_flags(name)
+        cmd = f"$TOOLS link --entry_point $PKG_DIR/{entry_point} {module_flags} {css_flags} --out-dir=$OUT"
+        set_command(name, cmd)
+    return pre_build
+
+def _external_flags(name):
+    modules = [module.split(":")[0] for module in get_labels(name, 'node_module:')]
+    css_modules = [css.split(":")[0] for css in get_labels(name, 'css_module:')]
+    return " ".join([f"--external={module}" for module in modules + css_modules])
+
+def _module_map_flags(name):
+    modules = [module.split(":") for module in get_labels(name, 'node_module:')]
+    return " ".join([f"--module {module}:{path}" for module, path in modules])
+
+def _css_map_flags(name):
+    modules = [module.split(":") for module in get_labels(name, 'css_module:')]
+    return " ".join([f"--css {module}:{path}" for module, path in modules])
+
+
+def http_server(name:str, entry_point:str, static_files:list=[], port:int=8080, proxy:str=None):
+    sf = filegroup(
+        name=tag(name, "static_files"),
+        srcs=static_files,
+    )
+    args = [
+        f"-p {port}",
+        f"-d $(out_location {entry_point})",
+        f"-s $(out_dir {sf})",
+    ]
+    log.info(proxy)
+    if proxy:
+        args.append(f"--proxy=$(out_location {proxy})")
+    sh_cmd(
+        name=name,
+        srcs=[entry_point],
+        cmd=" && ".join([
+            f"plz run {CONFIG.JS.HTTP_SERVER} -- " + ' '.join(args),
+        ]),
+        deps = [entry_point, sf, proxy],
+    )
+
+def http_proxy(name:str, proxy:str, host:str, protocol:str="http", port:int=8081, headers:dict={}, path_rewrite:dict={}):
+    headers = _format_dict(headers)
+    path_rewrite = _format_dict(path_rewrite)
+    genrule(
+        name=name,
+        cmd=f"echo '{{" +
+            f"\"proxy\": \"{proxy}\", " +
+            f"\"host\": \"{host}\", " +
+            f"\"protocol\": \"{protocol}\", " +
+            f"\"port\": {port}, " +
+            f"\"headers\": {headers}, " +
+            f"\"pathRewrite\": {path_rewrite}" +
+            f"}}' > $OUT",
+        outs=["proxy.json"],
+    )
+
+def _format_dict(d: dict) -> str:
+    return "{" + ", ".join([f'"{key}": "{value}"' for key, value in d.items()]) + "}"
