@@ -11,16 +11,22 @@ import (
 	
 	"github.com/evanw/esbuild/pkg/api"
 	"github.com/thought-machine/go-flags"
+
+	"tools/esbuild/plugins/resolver"
+	"tools/esbuild/plugins/loader"
+	"tools/esbuild/plugins/css_loader"
 )
 
 var opts = struct {
 	Usage string
 
 	Out         string   `short:"o" long:"out"`
+	OutDir      string   `short:"d" long:"out-dir"`
 	EntryPoints []string `short:"e" long:"entry_point"`
 
 	Link struct {
 		Modules map[string]string `short:"m" long:"module" description:"Module mapping"`
+		CSS map[string]string `short:"s" long:"css" description:"CSS Mapping"` 
 	} `command:"link" alias:"l" description:"Compile the entry_points, redirecting requires for the provided modules"`
 	Compile struct {
 		PackageJSON string   `short:"p" long:"package_json"`
@@ -39,18 +45,35 @@ var plugin = api.Plugin{
 	Name: "please",
 	Setup: func(build api.PluginBuild) {
 		build.OnResolve(api.OnResolveOptions{Filter: `.*`}, func(args api.OnResolveArgs) (api.OnResolveResult, error) {
-			log.Printf("on resolve: %s", args.Path)
+			log.Printf("%s on resolve: %s", args.Importer, args.Path)
 			if path, ok := opts.Link.Modules[args.Path]; ok {
+				log.Printf("module resolved: %s", path)
 				return api.OnResolveResult{
 					Path:      path,
 					Namespace: "please",
 				}, nil
+			} else {
+				log.Printf("module not resolved")
 			}
+			if path, ok := opts.Link.CSS[args.Path]; ok {
+				log.Printf("css resolved: %s", path)
+				return api.OnResolveResult{
+					Path:      path,
+					Namespace: "css",
+				}, nil
+			} else {
+				log.Printf("css not resolved")
+			}
+				
 			return api.OnResolveResult{}, nil
 		})
 		build.OnLoad(api.OnLoadOptions{Namespace: "please", Filter: `.*`}, func(args api.OnLoadArgs) (api.OnLoadResult, error) {
 			log.Printf("on load: %s", args.Path)
 			path := filepath.Join(wd, args.Path)
+			var loader api.Loader
+			if strings.HasSuffix(args.Path, ".css") {
+				loader = api.LoaderLocalCSS
+			}
 			data, err := ioutil.ReadFile(path)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Failed to load %v: %v\n", args.Path, err)
@@ -60,10 +83,12 @@ var plugin = api.Plugin{
 			contents := string(data)
 			return api.OnLoadResult{
 				Contents: &contents,
+				Loader: loader,
 			}, nil
 		})
 	},
 }
+
 func findEntryPointFromPkgJSON() string {
 	data, err := os.ReadFile(opts.Compile.PackageJSON)
 	if err != nil {
@@ -183,11 +208,12 @@ func main() {
 
 	if wdErr != nil {
 		panic(wdErr)
-	}
+	}	
 
 	buildOpts := api.BuildOptions{
 		EntryPoints: opts.EntryPoints,
 		Outfile:     opts.Out,
+		Outdir:      opts.OutDir,
 		Bundle:      true,
 		Write:       true,
 		LogLevel:    api.LogLevelInfo,
@@ -198,6 +224,8 @@ func main() {
 			".ts":   api.LoaderTS,
 			".tsx":  api.LoaderTSX,
 			".json": api.LoaderJSON,
+			// ".css": api.LoaderGlobalCSS,
+			// ".module.css": api.LoaderLocalCSS,
 			// ".d.ts":  api.LoaderNone, // ??
 		},
 		JSXFactory: "React.createElement",
@@ -206,12 +234,16 @@ func main() {
 		Define: map[string]string{
 			"process.env.NODE_ENV": "\"production\"",
 		},
-		Sourcemap: api.SourceMapInline,
+		Sourcemap: api.SourceMapLinked,
 	}
 
 	log.Printf(p.Command.Name)
 	if p.Active.Name == "link" {
-		buildOpts.Plugins = []api.Plugin{plugin}
+		buildOpts.Plugins = []api.Plugin{
+			resolver.Plugin(opts.Link.Modules, opts.Link.CSS),
+			loader.Plugin(),
+			cssloader.Plugin(),
+		}
 		buildOpts.Format = api.FormatESModule
 	} else {
 		if len(opts.EntryPoints) == 0 && opts.Compile.PackageJSON != "" {
@@ -220,8 +252,6 @@ func main() {
 		buildOpts.External = opts.Compile.External
 		if opts.Compile.Binary {
 			buildOpts.Format = api.FormatESModule
-		} else {
-			buildOpts.Format = api.FormatCommonJS
 		}
 	}
 

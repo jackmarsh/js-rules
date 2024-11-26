@@ -1,5 +1,5 @@
-import app from './app.css';
-import card from './card.css';
+import app from './app.module.css';
+import card from './card.module.css';
 
 const styles = {
   ...app,
