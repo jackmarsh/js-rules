@@ -1,8 +1,0 @@
-{
-  "name": "react",
-  "version": "1.0.0",
-  "license": "MIT",
-  "scripts": {
-    "test": "serve www"
-  }
-}

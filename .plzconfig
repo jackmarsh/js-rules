@@ -5,10 +5,6 @@ version = 17.8.7
 preloadsubincludes = ///go//build_defs:go
 preloadsubincludes = ///shell//build_defs:shell
 
-; [Plugin "js"]
-; Target = //build_defs:js
-; ESBuild = //third_party/js:esbuild
-
 [PluginDefinition]
 name = "js"
 

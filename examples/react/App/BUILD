@@ -8,18 +8,9 @@ js_library(
     entry_point = "index.jsx",
     deps = [
         "//third_party/js:react",
-        "//third_party/js:react-dom",
         "//examples/react/styles",
         "//examples/react/components/button",
         "//examples/react/components/layout",
     ],
     visibility = ["//examples/react/..."],
 )
-
-# css_module(
-#     name = "app_css",
-#     srcs = [
-#         "app.module.css",
-#     ],  
-#     visibility = ["//examples/react/..."],
-# )
