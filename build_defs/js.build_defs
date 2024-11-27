@@ -117,6 +117,7 @@ def _css_map_flags(name):
     return " ".join([f"--css {module}:{path}" for module, path in modules])
 
 
+subinclude("///shell//build_defs:shell")
 def dev_server(name:str, entry_point:str, static_files:list=[], port:int=8080, proxy:str=None):
     sf = filegroup(
         name=tag(name, "static_files"),
