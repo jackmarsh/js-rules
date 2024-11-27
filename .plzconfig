@@ -14,10 +14,10 @@ DefaultValue = //tools/esbuild
 Help = A file path or build label for esbuild.
 Inherit = true
 
-[PluginConfig "http_server"]
-ConfigKey = HTTP_SERVER
-DefaultValue = //tools/http_server
-Help = A file path or build label for a http_server.
+[PluginConfig "dev_server"]
+ConfigKey = DEV_SERVER
+DefaultValue = //tools/dev_server
+Help = A file path or build label for a dev_server.
 Inherit = true
 
 [Plugin "go"]

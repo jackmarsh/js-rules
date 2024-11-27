@@ -31,8 +31,8 @@ http_proxy(
     },
 )
 
-http_server(
-    name="http_server",
+dev_server(
+    name="dev_server",
     entry_point = ":react",
     static_files = [
         "index.html",

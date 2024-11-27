@@ -39,6 +39,3 @@ func onResolve(nodeModules, cssModules map[string]string) func(args api.OnResolv
 		return api.OnResolveResult{}, nil
 	}
 }
-			
-	
-		

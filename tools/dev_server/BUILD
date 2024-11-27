@@ -1,6 +1,6 @@
 go_binary(
-    name = "http_server",
-    srcs = ["http_server.go"],
+    name = "dev_server",
+    srcs = ["dev_server.go"],
     deps = [
         "//third_party/go:go-flags",
     ],

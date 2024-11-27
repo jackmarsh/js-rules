@@ -116,7 +116,7 @@ def _css_map_flags(name):
     return " ".join([f"--css {module}:{path}" for module, path in modules])
 
 
-def http_server(name:str, entry_point:str, static_files:list=[], port:int=8080, proxy:str=None):
+def dev_server(name:str, entry_point:str, static_files:list=[], port:int=8080, proxy:str=None):
     sf = filegroup(
         name=tag(name, "static_files"),
         srcs=static_files,
@@ -133,7 +133,7 @@ def http_server(name:str, entry_point:str, static_files:list=[], port:int=8080, 
         name=name,
         srcs=[entry_point],
         cmd=" && ".join([
-            f"plz run {CONFIG.JS.HTTP_SERVER} -- " + ' '.join(args),
+            f"plz run {CONFIG.JS.DEV_SERVER} -- " + ' '.join(args),
         ]),
         deps = [entry_point, sf, proxy],
     )

@@ -2,8 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -38,55 +36,6 @@ var opts = struct {
 esbuild provides a wrapper around esbuild, using plugins to perform a more traditional "compile" and "link" workflow 
 around bundling. 
 `,
-}
-
-var wd, wdErr = os.Getwd()
-var plugin = api.Plugin{
-	Name: "please",
-	Setup: func(build api.PluginBuild) {
-		build.OnResolve(api.OnResolveOptions{Filter: `.*`}, func(args api.OnResolveArgs) (api.OnResolveResult, error) {
-			log.Printf("%s on resolve: %s", args.Importer, args.Path)
-			if path, ok := opts.Link.Modules[args.Path]; ok {
-				log.Printf("module resolved: %s", path)
-				return api.OnResolveResult{
-					Path:      path,
-					Namespace: "please",
-				}, nil
-			} else {
-				log.Printf("module not resolved")
-			}
-			if path, ok := opts.Link.CSS[args.Path]; ok {
-				log.Printf("css resolved: %s", path)
-				return api.OnResolveResult{
-					Path:      path,
-					Namespace: "css",
-				}, nil
-			} else {
-				log.Printf("css not resolved")
-			}
-				
-			return api.OnResolveResult{}, nil
-		})
-		build.OnLoad(api.OnLoadOptions{Namespace: "please", Filter: `.*`}, func(args api.OnLoadArgs) (api.OnLoadResult, error) {
-			log.Printf("on load: %s", args.Path)
-			path := filepath.Join(wd, args.Path)
-			var loader api.Loader
-			if strings.HasSuffix(args.Path, ".css") {
-				loader = api.LoaderLocalCSS
-			}
-			data, err := ioutil.ReadFile(path)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Failed to load %v: %v\n", args.Path, err)
-				os.Exit(1)
-			}
-
-			contents := string(data)
-			return api.OnLoadResult{
-				Contents: &contents,
-				Loader: loader,
-			}, nil
-		})
-	},
 }
 
 func findEntryPointFromPkgJSON() string {
@@ -198,6 +147,7 @@ func findFirstIndexJS(dir string) string {
 	return firstIndexJS
 }
 
+var wd, wdErr = os.Getwd()
 func main() {
 	p := flags.NewParser(&opts, flags.Default)
 
