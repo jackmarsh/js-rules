@@ -1,13 +1,16 @@
 import React from 'react';
-import { Button } from 'examples/react/components/button/button';
-import { Inline, Stack } from 'examples/react/components/layout/layout';
-import jstyles from 'examples/react/styles/styles';
+import {
+  Route,
+  Routes,
+  BrowserRouter as Router,
+} from 'react-router';
+import { Button } from 'examples/react/components/button';
+import { Inline, Stack } from 'examples/react/components/layout';
+import jstyles from 'examples/react/styles';
 
 function App() {
-  return (
-    <div className={jstyles.app_app}>
-      My React App
-      <div className={jstyles.app_appThingy}/>
+  const splash = (
+    <div className={jstyles.app_appThingy}>
       <div className={jstyles.card_cardContainer}>
         A card
       </div>
@@ -21,6 +24,20 @@ function App() {
           <Button label="Click Me 4" onClick={() => console.log("That felt good!")}/>
         </Stack>
       </Inline>
+    </div>
+  );
+  const routes = (
+    <Routes>
+      <Route path="/" element={splash}/>
+      <Route path="/test" element={<div>test</div>}/>
+    </Routes>
+  );
+  return (
+    <div className={jstyles.app_app}>
+      My React App
+      <Router>
+        {routes}
+      </Router>
     </div>
   );
 }

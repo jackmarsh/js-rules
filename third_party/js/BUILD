@@ -27,6 +27,50 @@ node_module(
 )
 
 node_module(
+    name = "react-router",
+    module = "react-router",
+    version = "7.0.1",
+    visibility = [
+        "PUBLIC",
+    ],
+    deps = [
+        ":cookie",
+        ":react",
+        ":set-cookie-parser",
+        ":turbo-stream",
+    ],
+)
+
+node_module(
+    name = "cookie",
+    module = "cookie",
+    version = "1.0.2",
+    visibility = [
+        "PUBLIC",
+    ],
+)
+
+node_module(
+    name = "set-cookie-parser",
+    module = "set-cookie-parser",
+    version = "2.7.1",
+    visibility = [
+        "PUBLIC",
+    ],
+    entry_point="lib/set-cookie.js",
+)
+
+node_module(
+    name = "turbo-stream",
+    module = "turbo-stream",
+    version = "2.4.0",
+    visibility = [
+        "PUBLIC",
+    ],
+    entry_point="dist/turbo-stream.js",
+)
+
+node_module(
     name = "zeit_schemas",
     module = "schemas",
     scope = "@zeit",

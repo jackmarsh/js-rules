@@ -14,8 +14,9 @@ def node_module(name:str, scope:str = '', module:str = '', version:str = '', vis
         hashes=hashes,
         extract=True,
     )
+    out_file = entry_point.split('/')[-1] if entry_point else 'index.js'
     entry_point = f'{name}#dl/package/{entry_point}' if entry_point else ''
-    out_location = package_name() + f"/{name}/index.js"
+    out_location = package_name() + f"/{name}/{out_file}"
     return build_rule(
         name = name,
         outs = [name],
@@ -31,7 +32,7 @@ def node_module(name:str, scope:str = '', module:str = '', version:str = '', vis
     )
 
 def js_library(name:str, module_name:str='', srcs:list=[], deps:list=[], visibility:list=[], entry_point:str="index.js"):
-    module_name = module_name or package_name() + f"/{name}"
+    module_name = module_name or package_name()
     out_dir = package_name() + f'/{name}'
     return build_rule(
         name = name,
@@ -58,7 +59,7 @@ def jsx_library(name:str, module_name:str='', srcs:list=[], deps:list=[], visibi
     )
 
 def css_module(name:str, module_name:str='', srcs:list=[], deps:list=[], visibility:list=[], entry_point:str="index.js"):
-    module_name = module_name or package_name() + f"/{name}"
+    module_name = module_name or package_name()
     out_dir = package_name() + f'/{name}'
     return build_rule(
         name = name,

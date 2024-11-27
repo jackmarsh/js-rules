@@ -9,16 +9,7 @@ js_library(
     deps = [
         "//third_party/js:react",
         "//third_party/js:react-dom",
-        ":styles",
-    ],
-    visibility = ["//examples/react/..."],
-)
-
-css_module(
-    name = "styles",
-    entry_point = "index.js",
-    srcs = [
-        "Button.module.css",
+        "//examples/react/components/button/styles",
     ],
     visibility = ["//examples/react/..."],
 )
