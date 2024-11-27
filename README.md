@@ -10,7 +10,7 @@ First add the plugin to your project. In `plugins/BUILD`:
 plugin_repo(
     name = "js",
     owner = "odonate",
-	plugin = "js-rules",
+    plugin = "js-rules",
     revision = "<Some git tag, commit, or other reference>",
 )
 ```
@@ -68,9 +68,9 @@ subinclude("///js//build_defs:js")
 js_binary(
     name = "main",
     entry_point = "index.js",
-	srcs = [
-	    "index.css",
-	],
+    srcs = [
+        "index.css",
+    ],
     deps = [
         ":components",
         "//third_party/js:<node_module_name>",
@@ -79,7 +79,7 @@ js_binary(
 ```
 
 JS Rules comes with a dev server which is 10-100x faster than Webpack 5. To run the dev server simply add `dev_server` to your `BUILD` file like so:
-```
+```python
 dev_server(
     name="dev_server",
     entry_point = ":main",
@@ -91,7 +91,7 @@ dev_server(
 ```
 
 You can setup a proxy for the dev server with `http_proxy`:
-```
+```python
 http_proxy(
     name="http_proxy",
     proxy="/api",
