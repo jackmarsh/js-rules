@@ -18,7 +18,7 @@ plugin_repo(
 Then add the plugin config to `.plzconfig`:
 ```ini
 [Plugin "js"]
-Target = //plugins:js_rules
+Target = //plugins:js
 ```
 
 You can then compile JavaScript libraries like so:
