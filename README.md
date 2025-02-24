@@ -9,7 +9,7 @@ First add the plugin to your project. In `plugins/BUILD`:
 ```python
 plugin_repo(
     name = "js",
-    owner = "odonate",
+    owner = "jackmarsh",
     plugin = "js-rules",
     revision = "<Some git tag, commit, or other reference>",
 )
